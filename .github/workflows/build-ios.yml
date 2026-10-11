@@ -1,0 +1,63 @@
+name: Build QVAS iPhone app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        run: npm install
+
+      - name: Create the iOS project
+        run: npx cap add ios
+
+      - name: Allow background GPS and sound, landscape only
+        run: |
+          PL=ios/App/App/Info.plist
+          PB=/usr/libexec/PlistBuddy
+          $PB -c "Delete :UIBackgroundModes" $PL 2>/dev/null || true
+          $PB -c "Add :UIBackgroundModes array" $PL
+          $PB -c "Add :UIBackgroundModes:0 string audio" $PL
+          $PB -c "Add :UIBackgroundModes:1 string location" $PL
+          $PB -c "Delete :NSLocationWhenInUseUsageDescription" $PL 2>/dev/null || true
+          $PB -c "Add :NSLocationWhenInUseUsageDescription string QVAS uses your location to announce the next station." $PL
+          $PB -c "Delete :NSLocationAlwaysAndWhenInUseUsageDescription" $PL 2>/dev/null || true
+          $PB -c "Add :NSLocationAlwaysAndWhenInUseUsageDescription string QVAS keeps using your location in the background so announcements continue when the screen is locked." $PL
+          $PB -c "Delete :WKAppBoundDomains" $PL 2>/dev/null || true
+          $PB -c "Add :WKAppBoundDomains array" $PL
+          $PB -c "Add :WKAppBoundDomains:0 string qraillife.github.io" $PL
+          $PB -c "Delete :UISupportedInterfaceOrientations" $PL 2>/dev/null || true
+          $PB -c "Add :UISupportedInterfaceOrientations array" $PL
+          $PB -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationLandscapeLeft" $PL
+          $PB -c "Add :UISupportedInterfaceOrientations:1 string UIInterfaceOrientationLandscapeRight" $PL
+          cat $PL
+
+      - name: Build (unsigned)
+        working-directory: ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath "$PWD/build/App.xcarchive" archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+
+      - name: Make the .ipa
+        working-directory: ios/App/build
+        run: |
+          mkdir Payload
+          cp -R App.xcarchive/Products/Applications/App.app Payload/
+          zip -qr QVAS.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QVAS-ipa
+          path: ios/App/build/QVAS.ipa
