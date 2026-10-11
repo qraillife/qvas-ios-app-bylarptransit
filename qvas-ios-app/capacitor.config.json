@@ -1,0 +1,14 @@
+{
+  "appId": "au.larptransit.qvas",
+  "appName": "QVAS",
+  "webDir": "www",
+  "server": {
+    "url": "https://qraillife.github.io/QVASforMobile/",
+    "cleartext": false
+  },
+  "ios": {
+    "limitsNavigationsToAppBoundDomains": true,
+    "backgroundColor": "#76787b",
+    "contentInset": "never"
+  }
+}
