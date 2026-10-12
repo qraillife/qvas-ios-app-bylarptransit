@@ -21,6 +21,11 @@ jobs:
       - name: Create the iOS project
         run: npx cap add ios
 
+      - name: Use the QVAS app icon
+        run: |
+          find ios/App/App/Assets.xcassets/AppIcon.appiconset -name '*.png' -exec cp icon.png {} \;
+          ls -la ios/App/App/Assets.xcassets/AppIcon.appiconset
+
       - name: Allow background GPS and sound, landscape only
         run: |
           PL=ios/App/App/Info.plist
