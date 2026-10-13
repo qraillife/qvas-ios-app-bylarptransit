@@ -1,0 +1,19 @@
+{
+  "name": "QVAS by LARPTransit",
+  "identifier": "au.larptransit.qvas.source",
+  "apps": [
+    {
+      "name": "QVAS",
+      "bundleIdentifier": "au.larptransit.qvas",
+      "developerName": "LARPTransit",
+      "subtitle": "Queensland Rail style announcements",
+      "version": "1.0.12",
+      "versionDate": "2026-10-13",
+      "downloadURL": "https://github.com/qraillife/qvas-ios-app-bylarptransit/releases/download/build-12/QVAS.ipa",
+      "localizedDescription": "QVAS Mobile - the QVAS announcement screen for iPhone.",
+      "iconURL": "https://raw.githubusercontent.com/qraillife/qvas-ios-app-bylarptransit/main/icon.png",
+      "tintColor": "E9AF3B",
+      "size": 1813435
+    }
+  ]
+}
