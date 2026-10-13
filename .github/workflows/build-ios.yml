@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-14
@@ -16,7 +19,7 @@ jobs:
           node-version: 20
 
       - name: Install
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Create the iOS project
         run: npx cap add ios
@@ -24,7 +27,6 @@ jobs:
       - name: Use the QVAS app icon
         run: |
           find ios/App/App/Assets.xcassets/AppIcon.appiconset -name '*.png' -exec cp icon.png {} \;
-          ls -la ios/App/App/Assets.xcassets/AppIcon.appiconset
 
       - name: Allow background GPS and sound, landscape only
         run: |
@@ -66,3 +68,26 @@ jobs:
         with:
           name: QVAS-ipa
           path: ios/App/build/QVAS.ipa
+
+      - name: Publish release and AltStore source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="1.0.${{ github.run_number }}"
+          TAG="build-${{ github.run_number }}"
+          IPA=ios/App/build/QVAS.ipa
+          SIZE=$(wc -c < "$IPA" | tr -d ' ')
+          gh release create "$TAG" "$IPA" --title "QVAS $VERSION" --notes "Automatic build $VERSION"
+          jq -n \
+            --arg ver "$VERSION" \
+            --arg date "$(date -u +%Y-%m-%d)" \
+            --arg url "https://github.com/${{ github.repository }}/releases/download/$TAG/QVAS.ipa" \
+            --arg icon "https://raw.githubusercontent.com/${{ github.repository }}/main/icon.png" \
+            --argjson size "$SIZE" \
+            '{name:"QVAS by LARPTransit", identifier:"au.larptransit.qvas.source", apps:[{name:"QVAS", bundleIdentifier:"au.larptransit.qvas", developerName:"LARPTransit", subtitle:"Queensland Rail style announcements", version:$ver, versionDate:$date, downloadURL:$url, localizedDescription:"QVAS Mobile - the QVAS announcement screen for iPhone.", iconURL:$icon, tintColor:"E9AF3B", size:$size}]}' > altstore.json
+          cat altstore.json
+          git config user.name "qvas-build"
+          git config user.email "qvas-build@users.noreply.github.com"
+          git add altstore.json
+          git commit -m "Update AltStore source to $VERSION"
+          git push
