@@ -49,6 +49,13 @@ jobs:
           $PB -c "Add :UISupportedInterfaceOrientations:1 string UIInterfaceOrientationLandscapeRight" $PL
           cat $PL
 
+      - name: Keep the silent sound playing when the screen locks
+        run: |
+          AD=ios/App/App/AppDelegate.swift
+          perl -0pi -e 's/import UIKit\n/import UIKit\nimport AVFoundation\n/' $AD
+          perl -0pi -e 's/(didFinishLaunchingWithOptions[^\n]*\n)/$1        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])\n        try? AVAudioSession.sharedInstance().setActive(true)\n/' $AD
+          grep -n "AVAudioSession" $AD
+
       - name: Build (unsigned)
         working-directory: ios/App
         run: |
